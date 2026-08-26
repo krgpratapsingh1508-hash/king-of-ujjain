@@ -30,7 +30,7 @@ col1, col2 = pd_st.columns([0.15, 0.85])
 
 with col1:
     # Image ka alignment poore text ke beech me karne ke liye padding badha sakte hain
-    pd_st.image("Logo.png", width=160) 
+    pd_st.image("Logo 1.png", width=160) 
 
 with col2:
     # Dono text ab image ke right side me ek ke niche ek aayenge
