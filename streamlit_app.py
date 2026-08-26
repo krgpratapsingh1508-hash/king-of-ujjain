@@ -62,7 +62,7 @@ if uploaded_file is not None:
     target_num = sem_to_year_num[target_sem]
 
     college_name = "GOVT. K.R.G. POST-GRADUATE AUTONOMOUS COLLEGE, GWALIOR (M.P.)"
-    exam_info = f"Examination :- CCE &psp;&nbs;&nbsp;&nbsp;&nbsp; B.A. LL.B. {target_sem}th SEMESTER"
+    exam_info = f"Examination :- CCE                                             B.A. LL.B. {target_sem}th SEMESTER"
 
     roll_numbers = []
 
@@ -191,7 +191,7 @@ if uploaded_file is not None:
             
             @media print {
                 body { max-width: 100%; padding: 0; }
-                .flex-container { gap: 15px; }
+                .flex-container { gap: 10px; }
                 .print-action-area { display: none !important; }
             }
         </style>
