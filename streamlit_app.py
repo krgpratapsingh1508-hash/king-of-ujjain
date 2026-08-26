@@ -26,7 +26,7 @@ pd_st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-col1, col2 = pd_st.columns([0.15, 0.85])
+col1, col2 = pd_st.columns([0.30, 0.85])
 
 with col1:
     # Image ka alignment poore text ke beech me karne ke liye padding badha sakte hain
