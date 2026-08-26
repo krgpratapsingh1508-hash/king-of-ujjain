@@ -35,7 +35,8 @@ with col1:
     pd_st.image("Logo.png", width=100) 
 
 with col2:
-    pd_st.title("Pratap Singh"<br>"College CCE Foil Sheet Generator")
+    pd_st.title("ॐ गुरुवे नमः")
+    pd_st.title("College CCE Foil Sheet Generator")
 pd_st.subheader("Institute of Law, Govt. Kamlaraja Girls Post-Graduate Autonomous College, Gwalior,(M.P.)")
 
 # File Upload Option
