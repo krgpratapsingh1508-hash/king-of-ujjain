@@ -32,10 +32,10 @@ col1, col2 = pd_st.columns([0.15, 0.85])  # Dono ka ratio (size) set karne ke li
 with col1:
     # "logo.png" ki jagah GitHub par jo aapki file ka sahi naam hai wo likhein
     # width badhakar (jaise 80, 100, 120) aap image ka size bada ya chhota kar sakte hain
-    pd_st.image("Logo.png", width=80) 
+    pd_st.image("Logo.png", width=100) 
 
 with col2:
-    pd_st.title("College CCE Foil Sheet Generator")
+    pd_st.title("Pratap Singh"<br>"College CCE Foil Sheet Generator")
 pd_st.subheader("Institute of Law, Govt. Kamlaraja Girls Post-Graduate Autonomous College, Gwalior,(M.P.)")
 
 # File Upload Option
