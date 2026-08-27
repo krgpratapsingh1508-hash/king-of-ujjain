@@ -1,209 +1,221 @@
+import streamlit as pd_st
 import csv
+import io
 
-# 1. User se input lein ki kaun sa semester chahiye
-target_sem = input("Kaun sa Semester chahiye? (1 se 10 ke beech koi bhi number dalein): ").strip()
+# Website configuration (Standard wide layout)
+pd_st.set_page_config(layout="wide")
 
-# Semester ke hisab se numerical year ki mapping
-sem_to_year_num = {
-    "1": "1", "2": "1",
-    "3": "2", "4": "2",
-    "5": "3", "6": "3",
-    "7": "4", "8": "4",
-    "9": "5", "10": "5"
-}
+# Custom CSS: Print media rules taaki print me sirf foils aayein
+pd_st.markdown("""
+    <style>
+    @media print {
+        header, [data-testid="stHeader"], [data-testid="stSidebar"], 
+        .stButton, .stFileUploader, [data-testid="stDecoration"], 
+        [data-testid="stNotification"], h1, h3, .stAlert, .web-only-btn {
+            display: none !important;
+        }
+        @page {
+            margin: 5mm;
+            size: A4 landscape;
+        }
+        .main .block-container {
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+    }
+    </style>
+""", unsafe_allow_html=True)
 
-target_num = sem_to_year_num.get(target_sem)
+col1, col2 = pd_st.columns([0.15, 0.85])
 
-if not target_num:
-    print("❌ Galat semester number! Kripya 1 se 10 ke beech ka number dalein.")
-    exit()
+with col1:
+    # Image ka alignment poore text ke beech me karne ke liye padding badha sakte hain
+    pd_st.image("Logo.png", width=160) 
 
-college_name = "GOVT. K.R.G. POST-GRADUATE AUTONOMOUS COLLEGE, GWALIOR (M.P.)"
-exam_info = f"Examination :- CCE &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; B.A. LL.B. {target_sem}th SEMESTER"
+with col2:
+    # Dono text ab image ke right side me ek ke niche ek aayenge
+    pd_st.title("ॐ गुरुवे नमः")
+    pd_st.title("College CCE Foil Sheet Generator")
+pd_st.subheader("Institute of Law, Govt. Kamlaraja Girls Post-Graduate Autonomous College, Gwalior,(M.P.)")
 
-roll_numbers = []
+# File Upload Option
+uploaded_file = pd_st.file_uploader("Apni 'master_sheet.csv' file yahan upload karein", type=["csv"])
 
-# 2. Master Sheet se data filter karna
-try:
-    with open('master_sheet.csv', 'r', encoding='utf-8') as f:
-        reader = csv.DictReader(f)
+if uploaded_file is not None:
+    stringio = io.StringIO(uploaded_file.getvalue().decode("utf-8"))
+    csv_reader = csv.DictReader(stringio)
+    all_rows = list(csv_reader)
+    
+    pd_st.success("✅ Master sheet successfully upload ho gayi hai!")
+
+    # Semester Dropdown
+    semesters = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
+    target_sem = pd_st.selectbox("Kaun sa Semester chahiye?", semesters)
+
+    sem_to_year_num = {
+        "1": "1", "2": "1",
+        "3": "2", "4": "2",
+        "5": "3", "6": "3",
+        "7": "4", "8": "4",
+        "9": "5", "10": "5"
+    }
+    target_num = sem_to_year_num[target_sem]
+
+    college_name = "GOVT. K.R.G. POST-GRADUATE AUTONOMOUS COLLEGE, GWALIOR (M.P.)"
+    exam_info = f"Examination :- CCE                                             B.A. LL.B. {target_sem}th SEMESTER"
+
+    roll_numbers = []
+
+    for row in all_rows:
+        roll = row.get('Roll No.', row.get('Roll No', '')).strip()
+        student_year = row.get('year', row.get('YEAR', row.get('Year', ''))).strip().lower()
+        status = row.get('Status', row.get('STATUS', '')).strip().upper()
+        row_sem = row.get('Semester', row.get('SEMESTER', row.get('sem', ''))).strip()
         
-        for row in reader:
-            roll = row.get('Roll No.', row.get('Roll No', '')).strip()
-            student_year = row.get('year', row.get('YEAR', row.get('Year', ''))).strip().lower()
-            status = row.get('Status', row.get('STATUS', '')).strip().upper()
-            row_sem = row.get('Semester', row.get('SEMESTER', row.get('sem', ''))).strip()
-            
-            if not roll:
-                continue
-            
-            # Regular aur Ex-students filter logic
-            if target_num in student_year and 'REGULAR' in status:
+        if not roll:
+            continue
+        
+        if target_num in student_year and 'REGULAR' in status:
+            roll_numbers.append(roll)
+        elif 'EX-STUDENT' in status or 'EX' in status:
+            if row_sem == target_sem or target_num in student_year or not row_sem:
                 roll_numbers.append(roll)
-            elif 'EX-STUDENT' in status or 'EX' in status:
-                if row_sem == target_sem or target_num in student_year or not row_sem:
-                    roll_numbers.append(roll)
 
-    # Unique karke sequence me lagayein
     roll_numbers = sorted(list(set(roll_numbers)))
 
-except FileNotFoundError:
-    print("❌ Error: 'master_sheet.csv' file nahi mili! Pehle check karein ki file folder me hai.")
-    exit()
+    if roll_numbers:
+        pd_st.info(f"Total {len(roll_numbers)} students mile hain. Niche aapka format ready hai.")
 
-if not roll_numbers:
-    print(f"\n⚠️ Koi data nahi mila! Check karein ki master sheet me sahi data hai ya nahi.")
-    exit()
+        left_side_rolls = roll_numbers[:30]
+        right_side_rolls = roll_numbers[30:60]
 
-
-# --- DATA SPLITTING FOR LEFT & RIGHT FOIL TABLES ---
-# Pehle 30 students Left Foil ke liye, baaki ke (31 se 60 tak) Right Foil ke liye
-left_side_rolls = roll_numbers[:30]
-right_side_rolls = roll_numbers[30:60]
-
-# Agar 30 se zyada bacche hain toh poori layout ki width 900px hogi, varna single table ke liye 450px
-body_width = "900px" if len(roll_numbers) > 30 else "450px"
-
-# 3. HTML Structure aur CSS Design
-html_content = f"""<!DOCTYPE html>
-<html>
-<head>
-<style>
-    body {{ font-family: Arial, sans-serif; width: {body_width}; margin: auto; padding: 10px; border: 1px solid black; }}
-    .top-fields {{ display: flex; justify-content: space-between; margin-bottom: 5px; font-weight: bold; font-size: 13px; }}
-    .header-box {{ text-align: center; border-top: 2px solid black; border-bottom: 2px solid black; padding: 5px 0; margin-top: 5px; font-weight: bold; font-size: 15px; }}
-    .sub-box {{ border-bottom: 2px solid black; padding: 5px 0; font-size: 12px; font-weight: bold; }}
-    .marks-info {{ display: flex; justify-content: space-between; padding: 5px 0; font-weight: bold; border-bottom: 2px solid black; font-size: 12px; }}
-    
-    /* Side-by-Side Tables Layout */
-    .tables-container {{ display: flex; justify-content: space-between; margin-top: 10px; }}
-    .foil-block {{ width: { "48%" if len(roll_numbers) > 30 else "100%" }; }}
-    
-    .foil-title {{ text-align: center; font-weight: bold; background-color: #f2f2f2; border: 1px solid black; border-bottom: none; padding: 4px 0; font-size: 13px; }}
-    
-    table {{ width: 100%; border-collapse: collapse; text-align: center; font-size: 12px; }}
-    th, td {{ border: 1px solid black; padding: 4px; }}
-    .col-header-num {{ font-size: 10px; background-color: #f9f9f9; }}
-    
-    .note {{ font-size: 11px; padding: 8px 4px; border-top: 2px solid black; border-bottom: 2px solid black; text-align: justify; margin-top: 15px; }}
-    .footer-fields {{ margin-top: 15px; font-size: 12px; font-weight: bold; line-height: 1.8; }}
-</style>
-</head>
-<body>
-
-    <div class="top-fields">
-        <div></div><div>Paper Code....................</div>
-    </div>
-    <div class="top-fields">
-        <div></div><div>Bundle No....................</div>
-    </div>
-
-    <div class="header-box">{college_name}</div>
-    <div class="sub-box">{exam_info}</div>
-    <div class="sub-box">Subject............................................................. Paper...................................</div>
-    
-    <div class="marks-info">
-        <div>Maximum Marks:.............................</div>
-<div>Minimum Pass Marks:........................</div>
-    </div>
-    
-    <!-- Left aur Right Tables Ka Container -->
-    <div class="tables-container">
-    
-        <!-- LEFT SIDE FOIL (Rows 1 to 30) -->
-        <div class="foil-block">
-            <div class="foil-title">FOIL</div>
-            <table>
-                <tr>
-                    <th style="width: 15%;" class="col-header-num">1</th>
-                    <th style="width: 85%;" colspan="3" class="col-header-num">2</th>
-                </tr>
-                <tr>
-                    <th rowspan="2">Code No.</th>
-                    <th rowspan="2">Roll No.</th>
-                    <th colspan="2">Marks Obtained</th>
-                </tr>
-                <tr>
-                    <th style="width: 25%;">In Figures</th>
-                    <th>In Words</th>
-                </tr>
-    """
-
-# Left foil table ki rows generate karna (1 se 30)
-for index, roll in enumerate(left_side_rolls, start=1):
-    html_content += f"""
-                <tr>
-                    <td><b>{index}</b></td>
-                    <td>{roll}</td>
-                    <td></td>
-                    <td></td>
-                </tr>"""
-
-html_content += """
-            </table>
-        </div>
-"""
-
-# Agar 30 se zyada students hain, toh RIGHT SIDE FOIL table automatic banegi (31 se 60)
-if right_side_rolls:
-    html_content += f"""
-        <!-- RIGHT SIDE FOIL (Rows 31 to 60) -->
-        <div class="foil-block">
-            <div class="foil-title">FOIL</div>
-            <table>
-                <tr>
-                    <th style="width: 15%;" class="col-header-num">1</th>
-                    <th style="width: 85%;" colspan="3" class="col-header-num">2</th>
-                </tr>
-                <tr>
-                    <th rowspan="2">Code No.</th>
-                    <th rowspan="2">Roll No.</th>
-                    <th colspan="2">Marks Obtained</th>
-                </tr>
-                <tr>
-                    <th style="width: 25%;">In Figures</th>
-                    <th>In Words</th>
-                </tr>
-    """
-    
-    for index, roll in enumerate(right_side_rolls, start=31):
-        html_content += f"""
-                <tr>
-                    <td><b>{index}</b></td>
-                    <td>{roll}</td>
-                    <td></td>
-                    <td></td>
-                </tr>"""
+        # Reusable function to create an independent Foil Block content
+        def generate_html_block(rolls, start_idx, foil_label, has_data):
+            if not has_data:
+                return '<div class="foil-unit" style="border:none; background:transparent;"></div>'
                 
-    html_content += """
-            </table>
-        </div>
-    """
+            block = f"""
+            <div class="foil-unit">
+                <div class="top-fields">
+                    <div></div><div>Paper Code....................</div>
+                </div>
+                <div class="top-fields" style="margin-top: 5px;">
+                    <div></div><div>Bundle No....................</div>
+                </div>
+                <div class="header-box">{college_name}</div>
+                <div class="sub-box exam-right">{exam_info}</div>
+                <div class="sub-box">Subject.................................................... Paper.........................</div>
+                <div class="marks-info">
+                    <div>Max. Marks: ...................</div>
+                    <div>Min. Pass Marks: ...................</div>
+                </div>
+                <div class="foil-title">{foil_label}</div>
+                <table>
+                    <tr>
+                        <th class="col-header-num" style="width: 8%;">1</th>
+                        <th class="col-header-num" style="width: 30%;" colspan="3">2</th>
+                    </tr>
+                    <tr>
+                        <th rowspan="2">Code No.</th>
+                        <th rowspan="2">Roll No.</th>
+                        <th colspan="2">Marks Obtained</th>
+                    </tr>
+                    <tr>
+                        <th style="width: 15%;">In Figures</th>
+                        <th style="width: 45%;">In Words</th>
+                    </tr>
+            """
+            for i, r in enumerate(rolls, start=start_idx):
+                block += f"""
+                    <tr>
+                        <td><b>{i}</b></td>
+                        <td>{r}</td>
+                        <td></td>
+                        <td></td>
+                    </tr>"""
+            
+            # Form height symmetric rakhne ke liye khali rows
+            current_len = len(rolls)
+            if current_len < 30:
+                for k in range(current_len + start_idx, 30 + start_idx):
+                    block += """
+                    <tr>
+                        <td>&nbsp;</td>
+                        <td>&nbsp;</td>
+                        <td>&nbsp;</td>
+                        <td>&nbsp;</td>
+                    </tr>"""
 
-# Layout ka baki ka hissa aur signatures closure
-html_content += """
-    </div>
-    <!-- Tables Container Ends -->
+            block += """
+                </table>
+                <div class="note">
+                    <b>Note:</b> Roll Number and Marks awarded to the candidate may be entered under respective columns very carefully. Marks and Roll Number should be legible. These may be checked again to ensure that no mistake remains.
+                </div>
+                <div class="footer-fields">
+                    Signature of Examiner...............................................................<br>
+                    Name of Examiner.....................................................................<br>
+                    ....................................................................................................<br>
+                    <div style="display: flex; justify-content: space-between; margin-top: 5px;">
+                        <div>Place.......................................................</div>
+                        <div>Date: ___/___/2026</div>
+                    </div>
+                </div>
+            </div>
+            """
+            return block
 
-    <div class="note">
-        <b>Note:</b> Roll Number and Marks awarded to the candidate may be entered under respective columns very carefully. Marks and Roll Number should be legible. These may be checked again to ensure that no mistake remains.
-    </div>
+        # --- SIDE-BY-SIDE LAYOUT WITH INTEGRATED ACTIONABLE PRINT BUTTON ---
+        full_html = """<!DOCTYPE html>
+        <html>
+        <head>
+        <style>
+            body { font-family: Arial, sans-serif; background: white; margin: 0; padding: 5px; width: 100%; max-width: 1100px; margin: auto; }
+            
+            .print-action-area { text-align: center; margin-bottom: 20px; }
+            .action-btn { background-color: #2e7d32; border: none; color: white; padding: 12px 30px; text-align: center; text-decoration: none; display: inline-block; font-size: 15px; font-weight: bold; border-radius: 5px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+            .action-btn:hover { background-color: #1b5e20; }
+            
+            .flex-container { display: flex; justify-content: space-between; gap: 20px; width: 100%; }
+            .foil-unit { width: 49%; border: 1px solid black; padding: 12px; box-sizing: border-box; background: white; page-break-inside: avoid; }
+            .top-fields { display: flex; justify-content: space-between; font-weight: bold; font-size: 13px; }
+            .header-box { text-align: center; border-top: 2px solid black; border-bottom: 2px solid black; padding: 6px 0; margin-top: 8px; font-weight: bold; font-size: 16px; }
+            .sub-box { border-bottom: 2px solid black; padding: 5px 0; font-size: 12px; font-weight: bold; }
+            .exam-right { text-align: right; }
+            .marks-info { display: flex; justify-content: space-between; padding: 5px 0; font-weight: bold; border-bottom: 2px solid black; font-size: 12px; }
+            .foil-title { text-align: center; font-weight: bold; background-color: #f2f2f2; border: 1px solid black; border-bottom: none; padding: 4px 0; font-size: 13px; margin-top: 5px; }
+            table { width: 100%; border-collapse: collapse; text-align: center; font-size: 12px; }
+            th, td { border: 1px solid black; padding: 4px; height: 22px; }
+            .col-header-num { font-size: 10px; background-color: #f9f9f9; }
+            .note { font-size: 10.5px; padding: 8px 4px; border-top: 2px solid black; border-bottom: 2px solid black; text-align: justify; margin-top: 15px; }
+            .footer-fields { margin-top: 15px; font-size: 12px; font-weight: bold; line-height: 1.8; }
+            
+            @media print {
+                body { max-width: 100%; padding: 0; }
+                .flex-container { gap: 10px; }
+                .print-action-area { display: none !important; }
+            }
+        </style>
+        </head>
+        <body>
+            <div class="print-action-area">
+                <button class="action-btn" onclick="window.print()">🖨️ Print Only Foils (Portrait)</button>
+            </div>
+            
+            <div class="flex-container">
+        """
 
-    <div class="footer-fields">
-        Signature of Examiner...........................................................................<br>
-        Name of Examiner.................................................................................<br>
-        <div style="display: flex; justify-content: space-between;">
-            <div>Place...................................................</div>
-            <div>Date:___/____/2026</div>
-        </div>
-    </div>
+        full_html += generate_html_block(left_side_rolls, 1, "FOIL", True)
+        has_right_data = len(right_side_rolls) > 0
+        full_html += generate_html_block(right_side_rolls, 31, "FOIL", has_right_data)
 
-</body>
-</html>
-"""
+        full_html += """
+            </div>
+        </body>
+        </html>
+        """
 
-output_filename = f"cce_foil_sem_{target_sem}.html"
-with open(output_filename, "w", encoding="utf-8") as f:
-    f.write(html_content)
+        # [FIXED]: Height ko 1150 se badha kar 1350 kar diya hai taaki bina scroll box ke poori foil upar se niche tak wapas screen par dikhne lage
+        pd_st.components.v1.html(full_html, height=1550, scrolling=False)
 
-print(f"\n✅ Success! Total {len(roll_numbers)} students ke sath Left-Right Foil format me '{output_filename}' ban gayi hai.")
+    else:
+        pd_st.error("⚠️ Is Semester ka koi data nahi mila.")
