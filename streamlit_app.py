@@ -26,17 +26,9 @@ pd_st.markdown("""
  }
  </style>
 """, unsafe_allow_html=True) 
-col1, col2 = pd_st.columns([0.15, 0.85])
 
-with col1:
-    # Image ka alignment poore text ke beech me karne ke liye padding badha sakte hain
-    pd_st.image("Logo 1.png", width=160) 
-
-with col2:
-    # Dono text ab image ke right side me ek ke niche ek aayenge
-    pd_st.title("ॐ गुरुवे नमः")
-    pd_st.title("College CCE Foil Sheet Generator")
-pd_st.subheader("Institute of Law, Govt. Kamlaraja Girls Post-Graduate Autonomous College, Gwalior,(M.P.)")
+pd_st.title("🏫 College CCE Foil Sheet Generator") 
+pd_st.subheader("Institute of Law, Govt. Kamlaraja Girls Post-Graduate Autonomous College, Gwalior,(M.P.)") 
 
 # File Upload Option
 uploaded_file = pd_st.file_uploader("Apni 'master_sheet.csv' file yahan upload karein", type=["csv"]) 
@@ -93,7 +85,6 @@ if uploaded_file is not None:
         student_year = row.get('year', row.get('YEAR', row.get('Year', ''))).strip().lower() 
         status = row.get('Status', row.get('STATUS', '')).strip().upper() 
         row_sem = row.get('Semester', row.get('SEMESTER', row.get('sem', ''))).strip() 
-        
         row_admission_year = row.get('Admission Year', row.get('admission year', '')).strip()
  
         if not roll: 
@@ -105,6 +96,132 @@ if uploaded_file is not None:
             
         # EX-Students Logic with Dynamic Year Offset checked against 'Admission Year'
         elif 'EX-STUDENT' in status or 'EX' in status: 
+            if ex_target_year_str in row_admission_year: 
+                ex_rolls.append(roll) 
+ 
+    # Sort and Remove Duplicates
+    regular_rolls = sorted(list(set(regular_rolls))) 
+    ex_rolls = sorted(list(set(ex_rolls))) 
+ 
+    # EX-Students first, then Regular Students
+    roll_numbers = ex_rolls + regular_rolls 
+ 
+    if roll_numbers: 
+        pd_st.info(f"Total {len(roll_numbers)} students mile hain (EX: {len(ex_rolls)}, Regular: {len(regular_rolls)}). Niche aapka format ready hai.") 
+        left_side_rolls = roll_numbers[:30] 
+        right_side_rolls = roll_numbers[30:60] 
+
+        # Reusable function to create an independent Foil Block content
+        def generate_html_block(rolls, start_idx, foil_label, has_data): 
+            if not has_data: 
+                return '<div class="foil-unit" style="border:none; background:transparent;"></div>'
+ 
+            block = f"""
+            <div class="foil-unit">
+            <div class="top-fields">
+            <div></div><div>Paper Code....................</div>
+            </div>
+            <div class="top-fields" style="margin-top: 5px;">
+            <div></div><div>Bundle No....................</div>
+            </div>
+            <div class="header-box">{college_name}</div>
+            <div class="sub-box exam-right">{exam_info}</div>
+            <div class="sub-box">Subject.................................................... Paper.........................</div>
+            <div class="marks-info">
+            <div>Max. Marks: ...................</div>
+            <div>Min. Pass Marks: ...................</div>
+            </div>
+            <div class="foil-title">{foil_label}</div>
+            <table>
+            <tr>
+            <th class="col-header-num" style="width: 8%;">1</th>
+            <th class="col-header-num" style="width: 30%;" colspan="3">2</th>
+            </tr>
+            <tr>
+            <th rowspan="2">Code No.</th>
+            <th rowspan="2">Roll No.</th>
+            <th colspan="2">Marks Obtained</th>
+            </tr>
+            <tr>
+            <th style="width: 15%;">In Figures</th>
+            <th style="width: 45%;">In Words</th>
+            </tr>
+            """
+            for i, r in enumerate(rolls, start=start_idx): 
+                block += f"""
+                <tr>
+                <td><b>{i}</b></td>
+                <td>{r}</td>
+                <td></td>
+                <td></td>
+                </tr>"""
+ 
+            # Form height symmetric rakhne ke liye khali rows
+            current_len = len(rolls) 
+            if current_len < 30: 
+                for k in range(30 - current_len): 
+                    block += """
+                    <tr>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                    </tr>"""
+            block += f"""
+            </table>
+            <div class="note">
+            <b>Note:</b> Roll Number and Marks awarded to the candidate may be entered under respective columns very carefully. Marks and Roll Number should be legible. These may be checked again to ensure that no mistake remains.
+            </div>
+            <div class="footer-fields">
+            Signature of Examiner...............................................................<br>
+            Name of Examiner.....................................................................<br>
+            ....................................................................................................<br>
+            <div style="display: flex; justify-content: space-between; margin-top: 5px;">
+            <div>Place.......................................................</div>
+            <div>Date: ___/___/{current_calendar_year}</div>
+            </div>
+            </div>
+            </div>
+            """
+            return block
+
+        # --- SIDE-BY-SIDE LAYOUT WITH INTEGRATED ACTIONABLE PRINT BUTTON ---
+        full_html = """<!DOCTYPE html>
+        <html>
+        <head>
+        <style>
+        body { font-family: Arial, sans-serif; background: white; margin: 0; padding: 5px; width: 100%; max-width: 1100px; margin: auto; }
+ 
+        .print-action-area { text-align: center; margin-bottom: 20px; }
+        .action-btn { background-color: #2e7d32; border: none; color: white; padding: 12px 30px; text-align: center; text-decoration: none; display: inline-block; font-size: 15px; font-weight: bold; border-radius: 5px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        .action-btn:hover { background-color: #1b5e20; }
+ 
+        .flex-container { display: flex; justify-content: space-between; gap: 20px; width: 100%; }
+        .foil-unit { width: 49%; border: 1px solid black; padding: 12px; box-sizing: border-box; background: white; page-break-inside: avoid; }
+        .top-fields { display: flex; justify-content: space-between; font-weight: bold; font-size: 13px; }
+        .header-box { text-align: center; border-top: 2px solid black; border-bottom: 2px solid black; padding: 6px 0; margin-top: 8px; font-weight: bold; font-size: 16px; }
+        .sub-box { border-bottom: 2px solid black; padding: 5px 0; font-size: 12px; font-weight: bold; }
+        .exam-right { text-align: right; }
+        .marks-info { display: flex; justify-content: space-between; padding: 5px 0; font-weight: bold; border-bottom: 2px solid black; font-size: 12px; }
+        .foil-title { text-align: center; font-weight: bold; background-color: #f2f2f2; border: 1px solid black; border-bottom: none; padding: 4px 0; font-size: 13px; margin-top: 5px; }
+        table { width: 100%; border-collapse: collapse; text-align: center; font-size: 12px; }
+        th, td { border: 1px solid black; padding: 4px; height: 22px; }
+        .col-header-num { font-size: 10px; background-color: #f9f9f9; }
+        .note { font-size: 10.5px; padding: 8px 4px; border-top: 2px solid black; border-bottom: 2px solid black; text-align: justify; margin-top: 15px; }
+        .footer-fields { margin-top: 15px; font-size: 12px; font-weight: bold; line-height: 1.8; }
+ 
+        @media print {
+        body { max-width: 100%; padding: 0; }
+        .flex-container { gap: 15px; }
+        .print-action-area { display: none !important; }
+        }
+        </style>
+        </head>
+        <body>
+        <div class="print-action-area">
+        <button class="action-btn" onclick="window.print()">🖨  Print Only Foils (Portrait)</button>
+        </div>
+ 
             if ex_target_year_str in row_admission_year: 
                 ex_rolls.append(roll) 
  
