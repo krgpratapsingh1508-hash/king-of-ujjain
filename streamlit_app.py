@@ -363,7 +363,6 @@ if uploaded_file is not None:
                 return '<div class="foil-unit" style="border:none; background:transparent;"></div>'
  
             block = f"""
-            <div class="foil-unit">
             <div class="top-fields">
             <div></div><div>Paper Code....................</div>
             </div>
