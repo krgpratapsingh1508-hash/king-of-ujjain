@@ -361,9 +361,7 @@ if uploaded_file is not None:
         def generate_html_block(rolls, start_idx, foil_label, has_data): 
             if not has_data: 
                 return '<div class="foil-unit" style="border:none; background:transparent;"></div>'
- 
-            block = f"""
-            <div class="top-fields">
+
             <div></div><div>Paper Code....................</div>
             </div>
             <div class="top-fields" style="margin-top: 5px;">
